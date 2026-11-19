@@ -1,16 +1,31 @@
+"use client";
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getCatalog } from "@/lib/db/queries";
+import { useParams } from "next/navigation";
 import { ProblemRow } from "@/components/ProblemRow";
-import { BackLink, PageHeader, ProgressBar } from "@/components/ui";
+import { BackLink, EmptyState, PageHeader, ProgressBar } from "@/components/ui";
+import { useCatalog } from "@/lib/hooks";
 
-export const dynamic = "force-dynamic";
+export default function TopicPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data: catalog, isPending, error } = useCatalog();
 
-export default async function TopicPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const catalog = await getCatalog();
+  if (isPending) {
+    return <p className="py-16 text-center text-sm text-muted">Loading topic…</p>;
+  }
+  if (error || !catalog) {
+    return <p className="py-16 text-center text-sm text-danger">Could not load topic.</p>;
+  }
+
   const topic = catalog.topics.find((t) => t.id === id);
-  if (!topic) notFound();
+  if (!topic) {
+    return (
+      <EmptyState
+        title="Topic not found"
+        body="This topic may have been renamed or removed from the catalog."
+      />
+    );
+  }
 
   const patterns = catalog.subpatterns.filter((sp) => sp.topicId === topic.id);
   const topicProblemIds = catalog.problemTopics

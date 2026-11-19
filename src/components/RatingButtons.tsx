@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { rateProblem } from "@/app/actions";
+import { queryKeys } from "@/lib/api";
 import { LEVELS, scheduleText } from "@/lib/learn";
 
 // Rating 1-5 with instant feedback: the button lights up immediately and the
-// server state follows. The action drops the cached catalog before the page
-// is re-rendered, so the new rating really shows up right away.
+// React Query caches are invalidated after the write so every page refreshes.
 export function RatingButtons({
   problemId,
   confidence,
@@ -17,7 +17,7 @@ export function RatingButtons({
   confidence?: number | null;
   compact?: boolean;
 }) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [pending, startTransition] = useTransition();
   const [local, setLocal] = useState<number | null>(confidence ?? null);
   const [synced, setSynced] = useState<number | null>(confidence ?? null);
@@ -35,7 +35,10 @@ export function RatingButtons({
     startTransition(async () => {
       try {
         await rateProblem({ problemId, confidence: value });
-        router.refresh();
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: queryKeys.catalog }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.problem(problemId) }),
+        ]);
       } catch (e) {
         setLocal(confidence ?? null);
         setError((e as Error).message);

@@ -1,16 +1,29 @@
-import { getCatalog } from "@/lib/db/queries";
+"use client";
+
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { ProblemBrowser } from "@/components/ProblemBrowser";
 import { BackLink, PageHeader } from "@/components/ui";
+import { useCatalog } from "@/lib/hooks";
 
-export const dynamic = "force-dynamic";
+export default function ProblemsPage() {
+  return (
+    <Suspense fallback={<p className="py-16 text-center text-sm text-muted">Loading problems…</p>}>
+      <ProblemsView />
+    </Suspense>
+  );
+}
 
-export default async function ProblemsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ state?: string; topic?: string }>;
-}) {
-  const params = await searchParams;
-  const catalog = await getCatalog();
+function ProblemsView() {
+  const searchParams = useSearchParams();
+  const { data: catalog, isPending, error } = useCatalog();
+
+  if (isPending) {
+    return <p className="py-16 text-center text-sm text-muted">Loading problems…</p>;
+  }
+  if (error || !catalog) {
+    return <p className="py-16 text-center text-sm text-danger">Could not load problems.</p>;
+  }
 
   return (
     <>
@@ -33,8 +46,8 @@ export default async function ProblemsPage({
         statuses={catalog.statuses}
         confidence={catalog.confidence}
         reviewedAt={catalog.reviewedAt}
-        initialState={params.state ?? ""}
-        initialTopic={params.topic ?? ""}
+        initialState={searchParams.get("state") ?? ""}
+        initialTopic={searchParams.get("topic") ?? ""}
       />
     </>
   );

@@ -1,4 +1,7 @@
-import { getCatalog } from "@/lib/db/queries";
+"use client";
+
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   availabilityByDifficulty,
   parseRandomFilters,
@@ -8,8 +11,7 @@ import {
 import { ProblemRow } from "@/components/ProblemRow";
 import { RandomForm } from "@/components/RandomForm";
 import { BackLink, EmptyState, PageHeader } from "@/components/ui";
-
-export const dynamic = "force-dynamic";
+import { useCatalog } from "@/lib/hooks";
 
 const DIFFICULTY_LABEL = {
   easy: "Easy",
@@ -18,15 +20,30 @@ const DIFFICULTY_LABEL = {
   mixed: "Mixed",
 } as const;
 
-export default async function RandomPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const params = await searchParams;
-  const filters = parseRandomFilters(params);
-  const catalog = await getCatalog();
+export default function RandomPage() {
+  return (
+    <Suspense fallback={<p className="py-16 text-center text-sm text-muted">Shuffling problems…</p>}>
+      <RandomView />
+    </Suspense>
+  );
+}
 
+function RandomView() {
+  const searchParams = useSearchParams();
+  const { data: catalog, isPending, error } = useCatalog();
+
+  if (isPending) {
+    return <p className="py-16 text-center text-sm text-muted">Shuffling problems…</p>;
+  }
+  if (error || !catalog) {
+    return <p className="py-16 text-center text-sm text-danger">Could not load problems.</p>;
+  }
+
+  const params: Record<string, string> = {};
+  searchParams.forEach((value, key) => {
+    params[key] = value;
+  });
+  const filters = parseRandomFilters(params);
   const results = filters
     ? sampleProblems(catalog.problems, catalog.confidence, filters)
     : [];

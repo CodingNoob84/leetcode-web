@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { saveNote } from "@/app/actions";
+import { queryKeys } from "@/lib/api";
 
 export function NotesEditor({ problemId, initial }: { problemId: string; initial: string }) {
+  const queryClient = useQueryClient();
   const [content, setContent] = useState(initial);
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -17,6 +20,7 @@ export function NotesEditor({ problemId, initial }: { problemId: string; initial
     startTransition(async () => {
       try {
         await saveNote({ problemId, content });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.problem(problemId) });
         setSaved("Saved");
         setTimeout(() => setSaved(null), 2000);
       } catch (e) {

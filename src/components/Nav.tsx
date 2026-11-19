@@ -1,9 +1,11 @@
+"use client";
+
 import { Suspense } from "react";
 import Link from "next/link";
 import { MobileNav } from "./MobileNav";
 import { NavLinks } from "./NavLinks";
 import { RefreshButton } from "./RefreshButton";
-import { getCatalog } from "@/lib/db/queries";
+import { useCatalog } from "@/lib/hooks";
 import { isDue, nowMs } from "@/lib/learn";
 
 export function Nav() {
@@ -68,9 +70,10 @@ export function Nav() {
   );
 }
 
-/** The revisit counter needs the catalog, so it streams in behind Suspense. */
-async function DueBadge() {
-  const catalog = await getCatalog();
+/** The revisit counter streams in behind Suspense while the catalog loads. */
+function DueBadge() {
+  const { data: catalog } = useCatalog();
+  if (!catalog) return null;
   const now = nowMs();
   const due = Object.keys(catalog.confidence).filter((id) =>
     isDue(catalog.confidence[id], catalog.reviewedAt[id], now),

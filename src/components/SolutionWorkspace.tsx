@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { deleteSolution, saveSolution, setPreferredSolution } from "@/app/actions";
+import { queryKeys } from "@/lib/api";
 import { CodeBlock } from "./CodeBlock";
 import { RatingButtons } from "./RatingButtons";
 
@@ -27,7 +28,7 @@ export function SolutionWorkspace({
   template: string | null;
   confidence?: number | null;
 }) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(solutions[0]?.id ?? null);
   const [editing, setEditing] = useState<string | "new" | null>(null);
   const [saved, setSaved] = useState(false);
@@ -89,7 +90,7 @@ export function SolutionWorkspace({
         setSelectedId(result.solutionId);
         setEditing(null);
         setSaved(true);
-        router.refresh();
+        await queryClient.invalidateQueries({ queryKey: queryKeys.problem(problemId) });
       } catch (e) {
         setError((e as Error).message);
       }
@@ -102,7 +103,7 @@ export function SolutionWorkspace({
       try {
         await deleteSolution(problemId, id);
         if (selectedId === id) setSelectedId(solutions.find((x) => x.id !== id)?.id ?? null);
-        router.refresh();
+        await queryClient.invalidateQueries({ queryKey: queryKeys.problem(problemId) });
       } catch (e) {
         setError((e as Error).message);
       }
@@ -305,8 +306,11 @@ export function SolutionWorkspace({
               <button
                 type="button"
                 onClick={() =>
-                  startTransition(() => {
-                    void setPreferredSolution(problemId, selected.id);
+                  startTransition(async () => {
+                    await setPreferredSolution(problemId, selected.id);
+                    await queryClient.invalidateQueries({
+                      queryKey: queryKeys.problem(problemId),
+                    });
                   })
                 }
                 className="rounded-card border border-line px-3 py-1.5 text-xs font-semibold text-muted hover:bg-elevated hover:text-ink-dim"

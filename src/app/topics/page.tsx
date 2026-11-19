@@ -1,12 +1,20 @@
+"use client";
+
 import Link from "next/link";
-import { getCatalog } from "@/lib/db/queries";
 import { computeStats } from "@/lib/stats";
 import { BackLink, PageHeader, ProgressBar } from "@/components/ui";
+import { useCatalog } from "@/lib/hooks";
 
-export const dynamic = "force-dynamic";
+export default function TopicsPage() {
+  const { data: catalog, isPending, error } = useCatalog();
 
-export default async function TopicsPage() {
-  const catalog = await getCatalog();
+  if (isPending) {
+    return <p className="py-16 text-center text-sm text-muted">Loading topics…</p>;
+  }
+  if (error || !catalog) {
+    return <p className="py-16 text-center text-sm text-danger">Could not load topics.</p>;
+  }
+
   const stats = computeStats({
     problems: catalog.problems,
     statuses: catalog.statuses,

@@ -1,13 +1,20 @@
-import { getCatalog } from "@/lib/db/queries";
+"use client";
+
 import { TagBrowser } from "@/components/TagBrowser";
 import { BackLink, PageHeader } from "@/components/ui";
-
-export const dynamic = "force-dynamic";
+import { useCatalog } from "@/lib/hooks";
 
 const LEARNED = ["SOLVED", "REVIEW", "MASTERED"];
 
-export default async function TagsPage() {
-  const catalog = await getCatalog();
+export default function TagsPage() {
+  const { data: catalog, isPending, error } = useCatalog();
+
+  if (isPending) {
+    return <p className="py-16 text-center text-sm text-muted">Loading tags…</p>;
+  }
+  if (error || !catalog) {
+    return <p className="py-16 text-center text-sm text-danger">Could not load tags.</p>;
+  }
 
   const tags = catalog.tags
     .map((tag) => {

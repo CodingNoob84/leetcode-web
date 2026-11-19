@@ -1,19 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { refreshContentCache } from "@/app/actions";
 
 export function RefreshButton() {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [pending, startTransition] = useTransition();
   const [done, setDone] = useState(false);
 
   const refresh = () => {
     startTransition(async () => {
       await refreshContentCache();
+      await queryClient.invalidateQueries();
       setDone(true);
-      router.refresh();
       setTimeout(() => setDone(false), 2000);
     });
   };

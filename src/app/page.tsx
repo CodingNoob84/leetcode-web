@@ -1,13 +1,21 @@
+"use client";
+
 import Link from "next/link";
-import { getCatalog } from "@/lib/db/queries";
 import { isDue, LEVELS, nowMs } from "@/lib/learn";
 import { computeStats, studyOrder } from "@/lib/stats";
 import { Badge, PageHeader, ProgressBar } from "@/components/ui";
+import { useCatalog } from "@/lib/hooks";
 
-export const dynamic = "force-dynamic";
+export default function DashboardPage() {
+  const { data: catalog, isPending, error } = useCatalog();
 
-export default async function DashboardPage() {
-  const catalog = await getCatalog();
+  if (isPending) {
+    return <p className="py-16 text-center text-sm text-muted">Loading dashboard…</p>;
+  }
+  if (error || !catalog) {
+    return <p className="py-16 text-center text-sm text-danger">Could not load dashboard.</p>;
+  }
+
   const now = nowMs();
 
   const stats = computeStats({
@@ -159,8 +167,8 @@ export default async function DashboardPage() {
                 <span className="flex-1 truncate text-[15px] font-semibold text-ink">
                   {t.name}
                 </span>
-                {dueHere > 0 ? <Badge text={`↻ ${dueHere}`} color="var(--color-warning)" /> : null}
-                {done ? <Badge text="✓ done" color="var(--color-primary)" /> : null}
+                {dueHere > 0 ? <Badge text={`${dueHere} due`} color="var(--color-warning)" /> : null}
+                {done ? <Badge text="done" color="var(--color-primary)" /> : null}
                 <span className="text-xs text-muted">
                   {t.solved}/{t.total}
                 </span>

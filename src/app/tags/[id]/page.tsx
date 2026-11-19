@@ -1,19 +1,34 @@
+"use client";
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getCatalog } from "@/lib/db/queries";
+import { useParams } from "next/navigation";
 import { studyOrder } from "@/lib/stats";
 import { ProblemRow } from "@/components/ProblemRow";
-import { BackLink, PageHeader, ProgressBar } from "@/components/ui";
-
-export const dynamic = "force-dynamic";
+import { BackLink, EmptyState, PageHeader, ProgressBar } from "@/components/ui";
+import { useCatalog } from "@/lib/hooks";
 
 const LEARNED = ["SOLVED", "REVIEW", "MASTERED"];
 
-export default async function TagPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const catalog = await getCatalog();
+export default function TagPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data: catalog, isPending, error } = useCatalog();
+
+  if (isPending) {
+    return <p className="py-16 text-center text-sm text-muted">Loading tag…</p>;
+  }
+  if (error || !catalog) {
+    return <p className="py-16 text-center text-sm text-danger">Could not load tag.</p>;
+  }
+
   const tag = catalog.tags.find((t) => t.id === id);
-  if (!tag) notFound();
+  if (!tag) {
+    return (
+      <EmptyState
+        title="Tag not found"
+        body="This tag may have been renamed or removed from the catalog."
+      />
+    );
+  }
 
   const ids = new Set(
     catalog.problemTags.filter((l) => l.tagId === tag.id).map((l) => l.problemId),

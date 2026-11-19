@@ -1,16 +1,38 @@
-import { notFound } from "next/navigation";
-import { getList } from "@/lib/db/queries";
-import { getCatalog } from "@/lib/db/queries";
+"use client";
+
+import { useParams } from "next/navigation";
 import { ProblemRow } from "@/components/ProblemRow";
-import { BackLink, PageHeader, ProgressBar } from "@/components/ui";
+import { BackLink, EmptyState, PageHeader, ProgressBar } from "@/components/ui";
+import { useCatalog } from "@/lib/hooks";
 
-export const dynamic = "force-dynamic";
+export default function ListPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data: catalog, isPending, error } = useCatalog();
 
-export default async function ListPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const [listData, catalog] = await Promise.all([getList(id), getCatalog()]);
-  if (!listData) notFound();
-  const { list, problems } = listData;
+  if (isPending) {
+    return <p className="py-16 text-center text-sm text-muted">Loading list…</p>;
+  }
+  if (error || !catalog) {
+    return <p className="py-16 text-center text-sm text-danger">Could not load list.</p>;
+  }
+
+  const list = catalog.lists.find((l) => l.id === id);
+  if (!list) {
+    return (
+      <EmptyState
+        title="List not found"
+        body="This study list may have been removed from the catalog."
+      />
+    );
+  }
+
+  const problems = catalog.listEntries
+    .filter((e) => e.listId === id)
+    .sort((a, b) => a.position - b.position)
+    .flatMap((e) => {
+      const p = catalog.problems.find((x) => x.id === e.problemId);
+      return p ? [p] : [];
+    });
 
   const learnedCount = problems.filter(
     (p) => ["SOLVED", "REVIEW", "MASTERED"].includes(catalog.statuses[p.id] ?? ""),

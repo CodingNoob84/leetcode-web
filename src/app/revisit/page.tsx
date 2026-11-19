@@ -1,12 +1,20 @@
+"use client";
+
 import Link from "next/link";
-import { getCatalog } from "@/lib/db/queries";
 import { dueAt, isDue, level, nowMs, relativeDue } from "@/lib/learn";
 import { BackLink, DifficultyPill, PageHeader } from "@/components/ui";
+import { useCatalog } from "@/lib/hooks";
 
-export const dynamic = "force-dynamic";
+export default function RevisitPage() {
+  const { data: catalog, isPending, error } = useCatalog();
 
-export default async function RevisitPage() {
-  const catalog = await getCatalog();
+  if (isPending) {
+    return <p className="py-16 text-center text-sm text-muted">Loading revisit queue…</p>;
+  }
+  if (error || !catalog) {
+    return <p className="py-16 text-center text-sm text-danger">Could not load progress.</p>;
+  }
+
   const now = nowMs();
   const byId = new Map(catalog.problems.map((p) => [p.id, p]));
 
@@ -49,7 +57,7 @@ export default async function RevisitPage() {
       <div className="overflow-hidden rounded-card border border-line-subtle bg-card">
         {due.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-ink-dim">
-            All caught up 🎉 Nothing to revisit right now.
+            All caught up — nothing to revisit right now.
           </p>
         ) : (
           due.map((id, i) => {
@@ -67,7 +75,7 @@ export default async function RevisitPage() {
                   style={{ backgroundColor: level(catalog.confidence[id])?.color ?? "var(--color-muted)" }}
                 />
                 <span className="flex-1 truncate text-sm text-ink-dim">{p.title}</span>
-                <span className="text-xs text-warning">↻ due</span>
+                <span className="text-xs text-warning">due</span>
                 <DifficultyPill d={p.difficulty} />
               </Link>
             );

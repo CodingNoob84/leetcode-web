@@ -1,10 +1,13 @@
+"use client";
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getCatalog, getList, getProblemDetail } from "@/lib/db/queries";
+import { Suspense } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { ago, dueAt, isLearned, level, nowMs, relativeDue, scheduleText } from "@/lib/learn";
 import { studyOrder } from "@/lib/stats";
 import { parseRandomFrom, randomHref, sampleProblems } from "@/lib/random";
-import { Badge, DifficultyPill, PageHeader, SectionTitle } from "@/components/ui";
+import { useCatalog, useProblem } from "@/lib/hooks";
+import { Badge, DifficultyPill, EmptyState, PageHeader, SectionTitle } from "@/components/ui";
 import { CodeBlock } from "@/components/CodeBlock";
 import { Examples } from "@/components/Examples";
 import { RichText } from "@/components/RichText";
@@ -13,18 +16,36 @@ import { ProblemPager } from "@/components/ProblemPager";
 import { RatePanel } from "@/components/RatePanel";
 import { SolutionWorkspace } from "@/components/SolutionWorkspace";
 
-export const dynamic = "force-dynamic";
+export default function ProblemPage() {
+  return (
+    <Suspense
+      fallback={<p className="py-16 text-center text-sm text-muted">Loading problem…</p>}
+    >
+      <ProblemView />
+    </Suspense>
+  );
+}
 
-export default async function ProblemPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ from?: string }>;
-}) {
-  const [{ id }, { from }] = await Promise.all([params, searchParams]);
-  const [detail, catalog] = await Promise.all([getProblemDetail(id), getCatalog()]);
-  if (!detail) notFound();
+function ProblemView() {
+  const { id } = useParams<{ id: string }>();
+  const from = useSearchParams().get("from") ?? undefined;
+  const detailQuery = useProblem(id);
+  const catalogQuery = useCatalog();
+  const detail = detailQuery.data;
+  const catalog = catalogQuery.data;
+
+  if (detailQuery.isPending || catalogQuery.isPending) {
+    return <p className="py-16 text-center text-sm text-muted">Loading problem…</p>;
+  }
+  if (detailQuery.error || catalogQuery.error) {
+    return (
+      <EmptyState
+        title="Problem not found"
+        body="This problem may have been removed from the catalog."
+      />
+    );
+  }
+  if (!detail || !catalog) return null;
 
   const p = detail.problem;
   const detailTags = catalog.problemTags
@@ -56,7 +77,19 @@ export default async function ProblemPage({
 
   let sequenceIds = ordered.map((x) => x.id);
   const originList = from?.startsWith("list:")
-    ? await getList(from.slice("list:".length))
+    ? (() => {
+        const listId = from.slice("list:".length);
+        const list = catalog.lists.find((l) => l.id === listId);
+        if (!list) return null;
+        const problems = catalog.listEntries
+          .filter((e) => e.listId === listId)
+          .sort((a, b) => a.position - b.position)
+          .flatMap((e) => {
+            const match = catalog.problems.find((x) => x.id === e.problemId);
+            return match ? [match] : [];
+          });
+        return { list, problems };
+      })()
     : null;
   const originRandom = from?.startsWith("random:") ? parseRandomFrom(from) : null;
   if (originList) {

@@ -1,11 +1,19 @@
-import { getCatalog } from "@/lib/db/queries";
+"use client";
+
 import { ProblemRow } from "@/components/ProblemRow";
 import { BackLink, EmptyState, PageHeader } from "@/components/ui";
+import { useCatalog } from "@/lib/hooks";
 
-export const dynamic = "force-dynamic";
+export default function MasteredPage() {
+  const { data: catalog, isPending, error } = useCatalog();
 
-export default async function MasteredPage() {
-  const catalog = await getCatalog();
+  if (isPending) {
+    return <p className="py-16 text-center text-sm text-muted">Loading mastered problems…</p>;
+  }
+  if (error || !catalog) {
+    return <p className="py-16 text-center text-sm text-danger">Could not load progress.</p>;
+  }
+
   const mastered = catalog.problems.filter((p) => catalog.confidence[p.id] === 5);
 
   return (
