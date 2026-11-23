@@ -34,7 +34,6 @@ export function ProblemBrowser({
   problems,
   topics,
   subpatterns,
-  problemTopics,
   problemSubpatterns,
   statuses,
   confidence,
@@ -46,7 +45,6 @@ export function ProblemBrowser({
   problems: BrowserProblem[];
   topics: BrowserTopic[];
   subpatterns: BrowserSubpattern[];
-  problemTopics: { problemId: string; topicId: string }[];
   problemSubpatterns: { problemId: string; subpatternId: string }[];
   statuses: Record<string, string>;
   confidence: Record<string, number>;
@@ -62,28 +60,48 @@ export function ProblemBrowser({
 
   const now = nowMs();
 
-  const filtered = useMemo(
-    () =>
-      problems.filter((p) => {
-        if (difficulty && p.difficulty !== difficulty) return false;
-        const learned = ["SOLVED", "REVIEW", "MASTERED"].includes(statuses[p.id] ?? "");
-        if (state === "todo" && learned) return false;
-        if (state === "learned" && !learned) return false;
-        if (state === "due" && !isDue(confidence[p.id], reviewedAt[p.id], now)) return false;
-        if (query && !p.title.toLowerCase().includes(query.toLowerCase())) return false;
-        if (topic) {
-          const ids = problemTopics
-            .filter((l) => l.problemId === p.id)
-            .map((l) => l.topicId);
-          if (!ids.some((id) => topics.find((t) => t.id === id)?.slug === topic)) return false;
-        }
-        return true;
-      }),
-    [problems, difficulty, state, query, topic, topics, problemTopics, statuses, confidence, reviewedAt, now],
-  );
-
   // With a topic selected, group by subpattern (pattern -> problems).
   const activeTopic = topics.find((t) => t.slug === topic);
+
+  const filtered = useMemo(() => {
+    const activeSubIds = activeTopic
+      ? new Set(
+          subpatterns.filter((sp) => sp.topicId === activeTopic.id).map((sp) => sp.id),
+        )
+      : null;
+    return problems.filter((p) => {
+      if (difficulty && p.difficulty !== difficulty) return false;
+      const learned = ["SOLVED", "REVIEW", "MASTERED"].includes(statuses[p.id] ?? "");
+      if (state === "todo" && learned) return false;
+      if (state === "learned" && !learned) return false;
+      if (state === "due" && !isDue(confidence[p.id], reviewedAt[p.id], now)) return false;
+      if (query && !p.title.toLowerCase().includes(query.toLowerCase())) return false;
+      if (topic) {
+        if (!activeSubIds) return false;
+        if (
+          !problemSubpatterns.some(
+            (l) => l.problemId === p.id && activeSubIds.has(l.subpatternId),
+          )
+        )
+          return false;
+      }
+      return true;
+    });
+  }, [
+    problems,
+    difficulty,
+    state,
+    query,
+    topic,
+    activeTopic,
+    subpatterns,
+    problemSubpatterns,
+    statuses,
+    confidence,
+    reviewedAt,
+    now,
+  ]);
+
   const groups = useMemo(() => {
     if (!activeTopic) return [];
     return subpatterns

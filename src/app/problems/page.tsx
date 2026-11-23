@@ -41,7 +41,6 @@ function ProblemsView() {
           name: sp.name,
           position: sp.position,
         }))}
-        problemTopics={catalog.problemTopics}
         problemSubpatterns={catalog.problemSubpatterns}
         statuses={catalog.statuses}
         confidence={catalog.confidence}

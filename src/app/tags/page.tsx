@@ -3,6 +3,7 @@
 import { TagBrowser } from "@/components/TagBrowser";
 import { BackLink, PageHeader } from "@/components/ui";
 import { useCatalog } from "@/lib/hooks";
+import { deriveSpecificTags } from "@/lib/tags";
 
 const LEARNED = ["SOLVED", "REVIEW", "MASTERED"];
 
@@ -16,22 +17,25 @@ export default function TagsPage() {
     return <p className="py-16 text-center text-sm text-danger">Could not load tags.</p>;
   }
 
-  const tags = catalog.tags
-    .map((tag) => {
-      const ids = catalog.problemTags
-        .filter((l) => l.tagId === tag.id)
-        .map((l) => l.problemId);
-      const learned = ids.filter((id) => LEARNED.includes(catalog.statuses[id] ?? "")).length;
-      return { ...tag, total: ids.length, learned };
-    })
-    .filter((t) => t.total > 0);
+  const tags = deriveSpecificTags(catalog).map((tag) => {
+    const learned = tag.problemIds.filter((id) =>
+      LEARNED.includes(catalog.statuses[id] ?? ""),
+    ).length;
+    return {
+      id: tag.id,
+      name: tag.name,
+      description: tag.description,
+      total: tag.problemIds.length,
+      learned,
+    };
+  });
 
   return (
     <>
       <BackLink href="/">Dashboard</BackLink>
       <PageHeader
         title="Tags"
-        subtitle="Cross-cutting themes — islands, parentheses, paths and more — that group similar problems."
+        subtitle="Focused groups — pick one narrow idea and practise just those problems."
       />
       <TagBrowser tags={tags} />
     </>

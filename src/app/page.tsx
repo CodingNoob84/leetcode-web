@@ -23,7 +23,8 @@ export default function DashboardPage() {
     statuses: catalog.statuses,
     confidence: catalog.confidence,
     topics: catalog.topics,
-    problemTopics: catalog.problemTopics,
+    subpatterns: catalog.subpatterns,
+    problemSubpatterns: catalog.problemSubpatterns,
   });
 
   const pct = stats.total ? Math.round((stats.solved / stats.total) * 100) : 0;
@@ -150,8 +151,11 @@ export default function DashboardPage() {
       </h2>
       <div className="grid gap-3 sm:grid-cols-2">
         {stats.topics.map((t) => {
-          const ids = catalog.problemTopics
-            .filter((l) => l.topicId === t.id)
+          const spIds = new Set(
+            catalog.subpatterns.filter((sp) => sp.topicId === t.id).map((sp) => sp.id),
+          );
+          const ids = catalog.problemSubpatterns
+            .filter((l) => spIds.has(l.subpatternId))
             .map((l) => l.problemId);
           const dueHere = ids.filter((id) =>
             isDue(catalog.confidence[id], catalog.reviewedAt[id], now),

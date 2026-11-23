@@ -20,7 +20,8 @@ export default function TopicsPage() {
     statuses: catalog.statuses,
     confidence: catalog.confidence,
     topics: catalog.topics,
-    problemTopics: catalog.problemTopics,
+    subpatterns: catalog.subpatterns,
+    problemSubpatterns: catalog.problemSubpatterns,
   });
 
   return (

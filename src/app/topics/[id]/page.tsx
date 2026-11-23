@@ -28,8 +28,9 @@ export default function TopicPage() {
   }
 
   const patterns = catalog.subpatterns.filter((sp) => sp.topicId === topic.id);
-  const topicProblemIds = catalog.problemTopics
-    .filter((l) => l.topicId === topic.id)
+  const patternIds = new Set(patterns.map((sp) => sp.id));
+  const topicProblemIds = catalog.problemSubpatterns
+    .filter((l) => patternIds.has(l.subpatternId))
     .map((l) => l.problemId);
   const learnedCount = topicProblemIds.filter(
     (pid) => ["SOLVED", "REVIEW", "MASTERED"].includes(catalog.statuses[pid] ?? ""),

@@ -1,12 +1,14 @@
-// Dashboard aggregates over the catalog rows (port of
-// leetcode-app/lib/db/stats.ts). Single-user scale: everything is computed in JS.
+// Dashboard aggregates over the catalog rows. Single-user scale: everything is
+// computed in JS. A topic's totals come from its patterns (the study set), not
+// every problem merely tagged with the topic.
 export interface StatsInput {
   problems: { id: string }[];
   statuses: Record<string, string>;
   /** Self-rated confidence 1-5 per problem (absent = unrated). */
   confidence: Record<string, number>;
   topics: { id: string; name: string }[];
-  problemTopics: { problemId: string; topicId: string }[];
+  subpatterns: { id: string; topicId: string }[];
+  problemSubpatterns: { problemId: string; subpatternId: string }[];
 }
 
 export interface TopicStat {
@@ -39,7 +41,12 @@ export function computeStats(s: StatsInput): DashboardStats {
     total: s.problems.length,
     solved: s.problems.filter((p) => isSolved(p.id)).length,
     topics: s.topics.map((t) => {
-      const ids = s.problemTopics.filter((l) => l.topicId === t.id).map((l) => l.problemId);
+      const spIds = new Set(
+        s.subpatterns.filter((sp) => sp.topicId === t.id).map((sp) => sp.id),
+      );
+      const ids = s.problemSubpatterns
+        .filter((l) => spIds.has(l.subpatternId))
+        .map((l) => l.problemId);
       return { ...t, total: ids.length, solved: ids.filter(isSolved).length, avgConfidence: avgOf(ids) };
     }),
   };

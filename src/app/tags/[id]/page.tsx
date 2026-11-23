@@ -6,6 +6,7 @@ import { studyOrder } from "@/lib/stats";
 import { ProblemRow } from "@/components/ProblemRow";
 import { BackLink, EmptyState, PageHeader, ProgressBar } from "@/components/ui";
 import { useCatalog } from "@/lib/hooks";
+import { deriveSpecificTags } from "@/lib/tags";
 
 const LEARNED = ["SOLVED", "REVIEW", "MASTERED"];
 
@@ -20,7 +21,7 @@ export default function TagPage() {
     return <p className="py-16 text-center text-sm text-danger">Could not load tag.</p>;
   }
 
-  const tag = catalog.tags.find((t) => t.id === id);
+  const tag = deriveSpecificTags(catalog).find((t) => t.id === id);
   if (!tag) {
     return (
       <EmptyState
@@ -30,9 +31,7 @@ export default function TagPage() {
     );
   }
 
-  const ids = new Set(
-    catalog.problemTags.filter((l) => l.tagId === tag.id).map((l) => l.problemId),
-  );
+  const ids = new Set(tag.problemIds);
   const ordered = studyOrder(
     catalog.problems.filter((p) => ids.has(p.id)),
     catalog.topics,
