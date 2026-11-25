@@ -16,6 +16,7 @@ export function Nav() {
     { href: "/topics", label: "Topics", icon: "◇" },
     { href: "/tags", label: "Tags", icon: "#" },
     { href: "/lists", label: "Lists", icon: "▤" },
+    { href: "/articles", label: "Articles", icon: "✎" },
     { href: "/revisit", label: "Revisit", icon: "↻" },
     { href: "/mastered", label: "Mastered", icon: "✓" },
   ];

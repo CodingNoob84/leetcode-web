@@ -23,7 +23,7 @@ export const DEFAULT_TTL_MS = Number(process.env.CACHE_TTL_MS ?? 6 * 60 * 60 * 1
  * Bump when the shape of a cached payload changes — every key changes with
  * it, so stale entries can never be read back.
  */
-const CACHE_VERSION = "v22";
+const CACHE_VERSION = "v24";
 
 export interface CacheEntry<T> {
   data: T;

@@ -68,8 +68,15 @@ catalog, pattern-by-pattern study pages and an in-browser solution editor.
 | `/topics/[id]`   | Sub-patterns with "how to spot it" / strategy guides and problems |
 | `/lists`         | Curated study lists (Blind 75, NeetCode 150, …)                   |
 | `/lists/[id]`    | Ordered problems of one list                                      |
-| `/revisit`       | Spaced-repetition queue: due now and coming up                    |
-| `/mastered`      | Problems rated 5                                                  |
+| `/articles`      | Markdown study notes discovered from the repository's `articles/` folder |
+| `/articles/[id]` | A rendered Markdown article                                      |
+| `/revisit`      | Spaced-repetition queue: due now and coming up                    |
+| `/mastered`     | Problems rated 5                                                  |
+
+Articles are read directly from Markdown files under `articles/`; they are not
+stored in or fetched from the database. Article IDs are generated from each
+file's relative path, so adding a Markdown file automatically adds it to the
+articles page.
 
 ## How it shares data with the mobile app
 
